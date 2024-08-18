@@ -172,7 +172,24 @@ static void Field_Paste( field_t *edit ) {
 	char	*cbd;
 	int		pasteLen, i;
 
+#ifdef __WASM__
+	// because this happens asynchronously, the char events are created when the browser keypress event fires
+	//   all this does is set the field now, so that when something is pasted it can be send to playername
+	//   or console, etc.
+	// this is called a second time by the browser when the text is ready
+	static field_t *previousEdit = NULL;
+
+	if(edit) {
+		cbd = (void *)edit;
+		edit = previousEdit;
+		previousEdit = NULL;
+	} else {
+		previousEdit = edit;
+		return;
+	}
+#else
 	cbd = Sys_GetClipboardData();
+#endif
 
 	if ( !cbd ) {
 		return;
@@ -560,6 +577,29 @@ static void CL_KeyDownEvent( int key, unsigned time )
 		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
 		return;
 	}
+#endif
+
+#ifdef __WASM__
+extern	qboolean	first_click;
+void S_SoundInfo( void );
+qboolean SNDDMA_Init( void );
+extern qboolean s_soundStarted;
+extern qboolean s_soundMuted;
+
+	if(key == K_MOUSE1 && first_click) {
+		first_click = qfalse;
+    SNDDMA_Init();
+    gw_active = qtrue;
+    s_soundStarted = qtrue;
+    s_soundMuted = qfalse;
+    S_SoundInfo();
+		// TODO: all the sounds that successfully loaded before the first click
+		//   get wiped, but all the sounds that load after are correct,
+		// Turning this off, all the sounds that load successfully before have
+		//   the wrong IDs, and all the sounds loaded after refer to the wrong ID also
+    S_BeginRegistration();
+	}
+
 #endif
 
 	// console key is hardcoded, so the user can never unbind it

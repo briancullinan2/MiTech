@@ -55,6 +55,23 @@ echo_cmd=@echo
 Q=@
 endif
 
+#########################  WASM     ###################################
+ifeq ($(PLATFORM),wasm)
+ARCH=js
+USE_RENDERER_DLOPEN=0
+RENDERER_DEFAULT=opengl2
+WASM=1
+CROSS_COMPILING=1
+BUILD_SERVER=0
+USE_SYSTEM_JPEG=0
+USE_IPV6=0
+USE_SDL=0
+USE_CURL=0
+HAVE_VM_COMPILED=false
+USE_VULKAN_API=0
+USE_VULKAN=0
+endif
+
 #############################################################################
 #
 # If you require a different configuration from the defaults below, create a
@@ -371,6 +388,109 @@ CLIENT_EXTRA_FILES=
 
 
 #############################################################################
+# SETUP AND BUILD -- Web Assembly (WASI-SDK)
+#############################################################################
+
+ifdef WASM
+ARCHEXT = .wasm
+
+ifeq ($(COMPILE_PLATFORM),mingw)
+HAS_WASI=1
+endif
+ifeq ($(COMPILE_PLATFORM),linux)
+HAS_WASI=1
+endif
+ifeq ($(COMPILE_PLATFORM),darwin)
+HAS_WASI=1
+endif
+ifndef HAS_WASI
+error platform support (one of linux, mingw, darwin)
+endif 
+
+WASISDK        := $(lastword $(wildcard code/wasm/$(COMPILE_PLATFORM)/wasi-sdk-*))
+WASI-BUILTINS  := $(lastword $(wildcard $(WASISDK)/lib/clang/*))
+WASM-OPT       ?= $(lastword $(wildcard code/wasm/$(COMPILE_PLATFORM)/binaryen-version_*/bin/wasm-opt))
+#LD             := $(WASISDK)/bin/wasm-ld
+CC             := $(WASISDK)/bin/clang 
+LD             := $(CC)
+
+WASI_INCLUDES  := \
+	--target=wasm32 \
+  -Icode/wasm \
+	-I$(WASISDK)/share/wasi-sysroot/include \
+  -I$(WASISDK)/share/wasi-sysroot/include/wasm32-wasi \
+  -Icode/wasm/SDL2-2.0.14/include \
+  -Icode/libogg/include -Icode/libvorbis/include
+
+BASE_CFLAGS    += -fno-rtti -Wall \
+	-Wimplicit -fstrict-aliasing  -fno-inline \
+	-ftree-vectorize -fsigned-char -MMD \
+	-fno-short-enums  -fPIC \
+  -DNO_VM_COMPILED=1 -fno-common  \
+	-D_XOPEN_SOURCE=700 -D__EMSCRIPTEN__=1 \
+	-D__WASM__=1 -D__wasi__=1 -D__wasm32__=1 \
+	-D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_MMAN=1 \
+  -DDISABLE_IPV6=1 \
+  -std=gnu11 $(WASI_INCLUDES)
+
+LDFLAGS        += -D__WASM__=1 --no-standard-libraries \
+  -Wl,--export-dynamic -Wl,--error-limit=200 \
+  -Wl,--import-memory,--import-table \
+	$(WASI-BUILTINS)/lib/wasi/libclang_rt.builtins-wasm32.a \
+	$(WASISDK)/share/wasi-sysroot/lib/wasm32-wasi/libc.a 
+
+
+#  -Wl,--initial-memory=52428800 \
+  -Wl,--max-memory=1048576000 \
+  -Wl,--export-table,--growable-table 
+
+OPTIMIZE        = -O3 -ffast-math 
+
+SHLIBEXT = wasm
+SHLIBCFLAGS = -fvisibility=hidden $(OPTIMIZE)
+SHLIBLDFLAGS = -Wl,--no-entry $(LDFLAGS) \
+  -Wl,--export=malloc -Wl,--export=s_knownSfx \
+	-Wl,--export=stderr -Wl,--export=stdout \
+  -Wl,--allow-undefined-file=code/wasm/wasm.syms
+
+#  -fno-builtin -nostdlib 
+# -shared not supported
+#  -Wl,--export=CL_Try_LoadJPG,--export=CL_Fail_LoadJPG \
+
+CLIENT_LDFLAGS  = $(LDFLAGS) code/wasm/stack_ops.S \
+	-Wl,--export=sprintf       -Wl,--export=malloc  \
+	-Wl,--export=stderr        -Wl,--export=stdout  \
+  -Wl,--export=FS_CreatePath -Wl,--export=free \
+	-Wl,--export=errno,--export=R_FindPalette \
+  -Wl,--export=Key_ClearStates,--export=Key_GetCatcher \
+  -Wl,--export=Key_SetCatcher,--export=CL_PacketEvent \
+  -Wl,--export=s_soundStarted,--export=s_soundMuted,--export=s_knownSfx \
+  -Wl,--export=stackRestore,--export=stackSave,--export=stackAlloc \
+  -Wl,--export=dma,--export=S_SoundInfo,--export=Cbuf_ExecuteText \
+  -Wl,--export=Cbuf_AddText,--export=gw_minimized,--export=FS_RecordFile \
+  -Wl,--export=gw_active,--export=Z_Free,--export=CL_R_FinishImage3 \
+  -Wl,--export=CL_NextDownload,--export=com_fullyInitialized \
+  -Wl,--export=Z_Malloc,--export=Sys_QueEvent,--export=MSG_Init \
+  -Wl,--export=Com_RunAndTimeServerPacket,--export=Com_Frame \
+  -Wl,--export=Cvar_VariableValue,--export=Cvar_VariableIntegerValue \
+  -Wl,--export=Cvar_VariableString,--export=Cvar_Get \
+  -Wl,--export=cvar_modifiedFlags,--export=WindowResize \
+  -Wl,--export=Cvar_Set,--export=Cvar_SetValue \
+  -Wl,--export=Cvar_SetIntegerValue,--export=Cvar_CheckRange \
+  -Wl,--export=FS_ReadFile,--export=VM_Call \
+  -Wl,--export=FS_FreeFile,--export=FS_CopyString \
+  -Wl,--export=FS_GetCurrentGameDir,--export=Key_KeynumToString \
+  -Wl,--allow-undefined-file=code/wasm/wasm.syms
+
+
+
+DEBUG_CFLAGS    = $(BASE_CFLAGS) -DDEBUG -D_DEBUG -g -O0
+RELEASE_CFLAGS  = $(BASE_CFLAGS) -DNDEBUG $(OPTIMIZE)
+
+else
+LD =: $(CC)
+
+#############################################################################
 # SETUP AND BUILD -- MINGW32
 #############################################################################
 
@@ -586,6 +706,9 @@ else
 endif # *NIX platforms
 
 endif # !MINGW
+
+endif # !__WASM__
+
 
 
 TARGET_CLIENT = $(CNAME)$(ARCHEXT)$(BINEXT)

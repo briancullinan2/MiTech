@@ -178,6 +178,9 @@ typedef enum {
 
 #define NET_ADDRSTRMAXLEN 48	// maximum length of an IPv6 address string including trailing '\0'
 
+#ifdef __WASM__
+QALIGN(sizeof(int32_t))
+#endif
 typedef struct {
 	netadrtype_t	type;
 	union {
@@ -190,6 +193,8 @@ typedef struct {
 #ifdef USE_IPV6
 	uint32_t	scope_id;	// Needed for IPv6 link-local addresses
 #endif
+	char name[256];
+	char protocol[10];
 } netadr_t;
 
 void		NET_Init( void );
@@ -1083,8 +1088,10 @@ temp file loading
 
 */
 
+#ifndef __WASM__
 #if defined(_DEBUG) && !defined(BSPC)
 	#define ZONE_DEBUG
+#endif
 #endif
 
 #ifdef ZONE_DEBUG
@@ -1242,6 +1249,17 @@ typedef enum {
 	SE_MOUSE,	// evValue and evValue2 are relative signed x / y moves
 	SE_JOYSTICK_AXIS,	// evValue is an axis number and evValue2 is the current state (-127 to 127)
 	SE_CONSOLE,	// evPtr is a char*
+#ifdef __WASM__ //USE_ABS_MOUSE
+	SE_MOUSE_ABS,
+	SE_FINGER_DOWN,
+	SE_FINGER_UP,
+#endif
+#ifdef USE_DRAGDROP
+  SE_DROPBEGIN,
+  SE_DROPCOMPLETE,
+  SE_DROPFILE,
+  SE_DROPTEXT,
+#endif
 	SE_MAX,
 } sysEventType_t;
 
@@ -1322,6 +1340,10 @@ void *Sys_LoadLibrary( const char *name );
 void *Sys_LoadFunction( void *handle, const char *name );
 int   Sys_LoadFunctionErrors( void );
 void  Sys_UnloadLibrary( void *handle );
+#ifdef  __WASM__
+extern void DebugBreak( void );
+extern void DebugTrace( void );
+#endif
 
 // adaptive huffman functions
 void Huff_Compress( msg_t *buf, int offset );
