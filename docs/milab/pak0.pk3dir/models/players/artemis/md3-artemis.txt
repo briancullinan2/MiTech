@@ -1,0 +1,81 @@
+January 24th, 2005
+
+================================================================
+
+Model Name              : Artemis
+
+installation directory  : quake3/baseq3/md3-artemis.pk3
+
+Author                  : Rayl (n1048)
+
+Sounds                  : mostly original, some are not.
+                          see copyright section below for details.
+
+Email Address           : n/a
+
+Model description       : not much to say
+
+Additional Credits to   : see below
+
+================================================================
+
+* Play Information *
+
+ New Sounds    : YES
+ CTF Skins     : YES
+ LODS          : NO
+
+
+* Construction *
+
+ Poly Count    : 5577 polygons
+ Vert Count    : 3969 vertices
+ Skin Count    : 4 skin files
+
+ Base info     : new model from scratch
+
+ Software used : Modeling ---	Rokkaku Daioh Super 3
+                 Animation --	Cinema 4D XL 7.3
+                 Compiling --	NPherno's MD3 Compiler
+                 UV Mapper --	Ultimate Unwrap3D
+                 Texture  ---	Painter 7.0J
+
+ Known Bugs/Issues : no technical bugs known, but due to its
+                     alot-compared-to-original-id-model poly count,
+                     it may cause some performance issue on older systems.
+
+ Build/Animation time : bout 6+ months of lazy workz.
+
+
+* How to use this model *
+
+ 1. unzip q3mdl-artemis.zip
+ 2. place md3-artemis.pk3 file in your \baseq3 directly
+ 3. enjoy.
+
+
+* Copyright / Permissions <Sounds> *
+
+ "drown.wav" and "gasp.wav" are modified version of Slash's,
+  so id Software has copyright for these two files.
+
+  for other 11 sound files:
+
+   voice part : Sachika Souno
+   sfx part   : THE MATCH-MAKERS
+
+  copyright belong to them.
+
+
+* Copyright / Permissions <General> *
+
+ QUAKE(R) and QUAKE II(R) and QUAKE III(R) are registered trademarks of
+ id Software, Inc.
+
+ This model can be freely redistributed, as long as any part of original
+ archive is not deleted or modified. Also, no charge of any form should
+ be allowed for this model.
+
+ No permission needed to make additional skins/sounds/bots for this model,
+ just don't include them in this archive --- keep this at original state.
+
