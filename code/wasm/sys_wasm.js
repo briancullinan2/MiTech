@@ -17,7 +17,7 @@ function initEnvironment(ENGINE) {
 	if(!ENV.memory) {
 		ENV.memory = new WebAssembly.Memory({ 
 			initial: 3200, 
-			maximum: 32000,
+			maximum: 48000,
 			/* 'shared': true */
 		})
 	}
@@ -179,14 +179,14 @@ async function initBrowser() {
 	function initPreload() {
 		return new Promise(function (resolve) {
 			setTimeout(function () {
-				resolve(FS.virtual['cmod.wasm'].contents)
+				resolve(FS.virtual['qsand_opengl2.wasm'].contents)
 			}, 200)
 		})
 	}
 
 	// no delay on remote loads
 	function initStreaming() {
-		return fetch('cmod.wasm?time=' + NET.cacheBuster)
+		return fetch('qsand_opengl2.wasm?time=' + NET.cacheBuster)
 			.catch(function (e) { console.error(e) })
 			.then(function (response) {
 				if(response && response.status == 200) {
@@ -203,7 +203,7 @@ async function initBrowser() {
 	// might as well start this early, transfer 
 	//    IndexedDB from disk/memory to application memory
 	let bytes
-	if(typeof FS.virtual['cmod.wasm'] != 'undefined') {
+	if(typeof FS.virtual['qsand_opengl2.wasm'] != 'undefined') {
 		bytes = await Promise.resolve(initPreload())
 	} else {
 		isStreaming = true
