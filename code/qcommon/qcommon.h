@@ -134,7 +134,9 @@ NET
 
 ==============================================================
 */
+#ifndef DISABLE_IPV6
 #define USE_IPV6
+#endif
 
 #define NET_ENABLEV4            0x01
 #define NET_ENABLEV6            0x02
@@ -1144,12 +1146,20 @@ void CL_ResetOldGame( void );
 void CL_Shutdown( const char *finalmsg, qboolean quit );
 void CL_Frame( int msec, int realMsec );
 qboolean CL_GameCommand( void );
+#ifdef __WASM__
+void CL_KeyEvent (int key, qboolean down, unsigned time, int finger);
+#else
 void CL_KeyEvent (int key, qboolean down, unsigned time);
+#endif
 
 void CL_CharEvent( int key );
 // char events are for field typing, not game control
 
+#ifdef __WASM__
+void CL_MouseEvent( int dx, int dy, qboolean absolute );
+#else
 void CL_MouseEvent( int dx, int dy /*, int time*/ );
+#endif
 
 void CL_JoystickEvent( int axis, int value, int time );
 

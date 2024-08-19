@@ -2310,16 +2310,6 @@ static qboolean ParseShader( const char **text )
       R_AddPalette(file, a, r, g, b);
 			continue;
 		}
-    else if ( !Q_stricmp( token, "novlcollapse" ) )
-		{
-			// new in quakelive
-			shader.noVertexLightingCollapse = qtrue;
-			continue;
-		}
-    else if ( !Q_stricmp( token, "nocompress" ) )   {
-      shader.allowCompress = qfalse;
-      continue;
-    }
     else if (!Q_stricmp( token, "translucent" ) )
 		{
 			shader.contentFlags |= CONTENTS_TRANSLUCENT;

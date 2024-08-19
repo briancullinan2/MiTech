@@ -761,7 +761,11 @@ CL_KeyEvent
 Called by the system for both key up and key down events
 ===================
 */
+#ifdef __WASM__
+void CL_KeyEvent( int key, qboolean down, unsigned time, int finger )
+#else
 void CL_KeyEvent( int key, qboolean down, unsigned time )
+#endif
 {
 	if ( down )
 		CL_KeyDownEvent( key, time );
@@ -818,7 +822,11 @@ void Key_ClearStates( void )
 	for ( i = 0 ; i < MAX_KEYS ; i++ )
 	{
 		if ( keys[i].down )
+#ifdef __WASM__
+			CL_KeyEvent( i, qfalse, 0, 0 );
+#else
 			CL_KeyEvent( i, qfalse, 0 );
+#endif
 
 		keys[i].down = qfalse;
 		keys[i].repeats = 0;

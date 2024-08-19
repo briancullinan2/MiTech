@@ -93,6 +93,11 @@ cvar_t *cl_stencilbits;
 cvar_t *cl_depthbits;
 cvar_t *cl_drawBuffer;
 
+#ifdef USE_MASTER_LAN
+cvar_t	*cl_master[MAX_MASTER_SERVERS];		// master server ip address
+#endif
+
+
 clientActive_t		cl;
 clientConnection_t	clc;
 clientStatic_t		cls;

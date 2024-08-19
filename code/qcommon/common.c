@@ -3407,12 +3407,6 @@ static void Sys_GetProcessorId( char *vendor )
 
 #else
 
-#ifdef USE_AFFINITY_MASK
-static uint64_t eCoreMask;
-static uint64_t pCoreMask;
-static uint64_t affinityMask; // saved at startup
-#endif
-
 #if (idx64 || id386)
 
 #if defined _MSC_VER
@@ -3595,6 +3589,8 @@ static void Sys_GetProcessorId( char *vendor )
 #endif // !_WIN32
 
 #endif // non-x86
+
+#endif // !__WASM__
 
 /*
 ================

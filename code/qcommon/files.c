@@ -4965,12 +4965,9 @@ static void FS_CheckIdPaks( void )
 		|| !Q_stricmp( fs_gamedirvar->string, BASETA ))
 			Com_Error(ERR_FATAL, "\n*** you need to install Quake III Arena in order to play ***");
 #endif
-	}
-#endif
 }
-
-
 #endif
+
 
 /*
 =====================
@@ -5159,7 +5156,7 @@ Q_EXPORT void FS_RecordFile(const char *file) {
 	fs_uiSawAsync = qfalse;
 	fs_gameSawAsync = qfalse;
 
-	Q_strncpy(asyncFiles[numAsyncFiles], (char *)file, MAX_QPATH);
+	strcpy(asyncFiles[numAsyncFiles], (char *)file);
 	numAsyncFiles++;
 }
 
