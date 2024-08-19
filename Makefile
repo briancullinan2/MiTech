@@ -59,6 +59,8 @@ endif
 ifeq ($(PLATFORM),wasm)
 ARCH=js
 USE_RENDERER_DLOPEN=0
+USE_CODEC_OPUS=0
+USE_CODEC_VORBIS=0
 RENDERER_DEFAULT=opengl2
 WASM=1
 CROSS_COMPILING=1
@@ -234,6 +236,7 @@ SDLDIR=$(MOUNT_DIR)/sdl
 CMDIR=$(MOUNT_DIR)/qcommon
 UDIR=$(MOUNT_DIR)/unix
 W32DIR=$(MOUNT_DIR)/win32
+WASMDIR=$(MOUNT_DIR)/wasm
 BLIBDIR=$(MOUNT_DIR)/botlib
 UIDIR=$(MOUNT_DIR)/ui
 JPDIR=$(MOUNT_DIR)/libjpeg
@@ -1408,6 +1411,14 @@ ifeq ($(USE_CURL),1)
   Q3OBJ += $(B)/client/cl_curl.o
 endif
 
+ifdef WASM
+
+Q3OBJ += \
+    $(B)/client/sys_main.o $(B)/client/dlmalloc.o \
+    $(B)/client/sbrk.o
+
+else
+
 ifdef MINGW
 
   Q3OBJ += \
@@ -1474,6 +1485,8 @@ endif # !USE_SDL
 
 endif # !MINGW
 
+endif # !__WASM__
+
 # client binary
 
 $(B)/$(TARGET_CLIENT): $(Q3OBJ)
@@ -1487,13 +1500,24 @@ $(B)/$(TARGET_REND1): $(Q3REND1OBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) -o $@ $(Q3REND1OBJ) $(SHLIBCFLAGS) $(SHLIBLDFLAGS)
 
+ifneq ($(PLATFORM),wasm)
 $(STRINGIFY): $(MOUNT_DIR)/renderer2/stringify.c
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) -o $@ $(MOUNT_DIR)/renderer2/stringify.c $(LDFLAGS)
+endif
 
+
+ifeq ($(PLATFORM),wasm)
 $(B)/$(TARGET_REND2): $(Q3REND2OBJ) $(Q3REND2STROBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) -o $@ $(Q3REND2OBJ) $(Q3REND2STROBJ) $(SHLIBCFLAGS) $(SHLIBLDFLAGS)
+	$(WASM-OPT) -Os --zero-filled-memory --no-validation -o $@ $@
+
+else
+$(B)/$(TARGET_REND2): $(Q3REND2OBJ) $(Q3REND2STROBJ)
+	$(echo_cmd) "LD $@"
+	$(Q)$(CC) -o $@ $(Q3REND2OBJ) $(Q3REND2STROBJ) $(SHLIBCFLAGS) $(SHLIBLDFLAGS)
+endif
 
 $(B)/$(TARGET_RENDV): $(Q3RENDVOBJ)
 	$(echo_cmd) "LD $@"
@@ -1657,8 +1681,18 @@ $(B)/rend1/%.o: $(RCDIR)/%.c
 $(B)/rend1/%.o: $(CMDIR)/%.c
 	$(DO_REND_CC)
 
+ifneq ($(PLATFORM),wasm)
 $(B)/rend2/glsl/%.c: $(R2DIR)/glsl/%.glsl $(STRINGIFY)
 	$(DO_REF_STR)
+
+else
+
+$(B)/rend2/glsl/%.c: $(R2DIR)/glsl/%.glsl
+	$(echo_cmd) "REF_STR $@"
+	$(Q)echo "const char *fallbackShader_$(notdir $(basename $<)) =" >> $@
+	$(Q)cat $< | sed -e 's/^/\"/;s/$$/\\n\"/' | tr -d '\r' >> $@
+	$(Q)echo ";" >> $@
+endif
 
 $(B)/rend2/glsl/%.o: $(B)/renderer2/glsl/%.c
 	$(DO_REND_CC)
@@ -1680,6 +1714,9 @@ $(B)/rendv/%.o: $(RCDIR)/%.c
 
 $(B)/rendv/%.o: $(CMDIR)/%.c
 	$(DO_REND_CC)
+
+$(B)/client/%.o: $(WASMDIR)/%.c
+	$(DO_CC)
 
 $(B)/client/%.o: $(UDIR)/%.c
 	$(DO_CC)

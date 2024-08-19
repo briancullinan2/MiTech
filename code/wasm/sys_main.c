@@ -439,3 +439,9 @@ void IN_PushDropEvent(SDL_DropEvent e)
 	}
 }
 */
+void Sys_Cmd( const char *command )
+{
+
+}
+
+
